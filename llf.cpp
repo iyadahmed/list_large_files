@@ -34,4 +34,5 @@ int main(int argc, char *argv[])
   }
 
   std::cout << largest_file_path.stem() << " " << largest_file_size << std::endl;
+  return 0;
 }
