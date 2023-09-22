@@ -2,6 +2,8 @@
 #include <iostream>
 #include <vector>
 
+#include "bytesize/bytesize.hh"
+
 int main(int argc, char *argv[])
 {
   const char *directory;
@@ -32,7 +34,7 @@ int main(int argc, char *argv[])
       largest_file_path = entry.path();
     }
   }
-
-  std::cout << largest_file_path.stem() << " " << largest_file_size << std::endl;
+  std::cout << std::filesystem::canonical(largest_file_path) << " "
+            << bytesize::bytesize(largest_file_size) << std::endl;
   return 0;
 }
