@@ -1,22 +1,12 @@
 import os
 import sys
+from bisect import insort
 from collections import deque
 from dataclasses import dataclass
-from heapq import nlargest
 from pathlib import Path
 
 from humanize import naturalsize
 from prettytable import PrettyTable
-
-# Quote from Python docs on heapq.nlargest and heapq.nsmallest:
-# The latter two functions perform best for smaller values of n.
-# For larger values, it is more efficient to use the sorted() function.
-# Also, when n==1, it is more efficient to use the built-in min() and max() functions.
-# If repeated usage of these functions is required, consider turning the iterable into an actual heap.
-
-# NOTE: maybe it is better for memory usage to not store all the files in a list
-# but rather only keep record of top n largest files and replace them when a larger file is found
-# like insertion sort or something
 
 
 @dataclass
@@ -45,7 +35,7 @@ def print_files_table(files: list[File]):
 
 
 def get_files_recursive_step(
-    path: str, directories_queue: deque[str], files: list[File]
+    path: str, directories_queue: deque[str], files: list[File], n: int
 ):
     with os.scandir(path) as it:
         for entry in it:
@@ -54,18 +44,19 @@ def get_files_recursive_step(
                 continue
             # We also don't handle symbolic links for now
             if entry.is_file(follow_symlinks=False):
-                files.append(
-                    File(
-                        entry.name,
-                        entry.stat(follow_symlinks=False).st_size,
-                        entry.path,
-                    )
+                file = File(
+                    entry.name,
+                    entry.stat(follow_symlinks=False).st_size,
+                    entry.path,
                 )
+                insort(files, file, key=lambda file: file.size)
+                if len(files) > n:
+                    files.pop(0)
             elif entry.is_dir(follow_symlinks=False):
                 directories_queue.append(entry.path)
 
 
-def get_files_recursive(path: str) -> list[File]:
+def get_largest_files_recursive(path: str, n: int) -> list[File]:
     files: list[File] = []
 
     # We use a queue to recursively traverse the directory tree
@@ -75,7 +66,7 @@ def get_files_recursive(path: str) -> list[File]:
     while len(directories_queue) > 0:
         dirpath = directories_queue.popleft()
         try:
-            get_files_recursive_step(dirpath, directories_queue, files)
+            get_files_recursive_step(dirpath, directories_queue, files, n)
         # I tried running the script in my home directory so I catch these errors
         except PermissionError:
             print(f"Permission denied for {dirpath}")
@@ -86,12 +77,11 @@ def get_files_recursive(path: str) -> list[File]:
         except OSError:
             print(f"OS error for {dirpath}")
 
-    return files
+    return files[::-1]
 
 
 def print_nlargest_files(path: str, n: int):
-    files = get_files_recursive(path)
-    largest_files = nlargest(n, files, key=lambda file: file.size)
+    largest_files = get_largest_files_recursive(path, n)
     print_files_table(largest_files)
 
 
