@@ -8,8 +8,14 @@ int main(int argc, char *argv[])
   if (argc == 1) {
     directory = ".";
   }
-  else {
+  else if (argc == 2) {
     directory = argv[1];
+  }
+  else {
+    std::cerr << "Too many arguments." << std::endl;
+    std::cerr << "Usage: llf [directory]" << std::endl;
+    std::cerr << "If directory is not specified, the current directory is used." << std::endl;
+    return 1;
   }
 
   std::filesystem::path largest_file_path;
