@@ -1,0 +1,2 @@
+humanize==4.8.0
+prettytable==3.9.0
