@@ -1,0 +1,5 @@
+cmake_minimum_required(VERSION 3.16)
+project(LLF)
+add_executable(llf llf.cpp)
+target_compile_features(llf PRIVATE cxx_std_17)
+set_target_properties(llf PROPERTIES CXX_EXTENSIONS OFF)
